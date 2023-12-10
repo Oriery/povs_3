@@ -20,6 +20,7 @@
 #include "main.h"
 #include "usart.h"
 #include "gpio.h"
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -55,6 +56,11 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void Print(char *str)
+{
+  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
+}
 
 /* USER CODE END 0 */
 
@@ -95,6 +101,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    Print("Hello World\r\n");
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
