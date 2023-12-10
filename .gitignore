@@ -1,0 +1,13 @@
+.vscode/
+
+MDK-ARM/
+Drivers/
+
+MDK-ARM/*/gpio.o
+*.dep
+*.axf
+*.htm
+*.hex
+*.map
+*.o
+*_log.htm
