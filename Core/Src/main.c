@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -48,6 +50,8 @@
 
 /* USER CODE BEGIN PV */
 
+uint32_t JoyStickBuffer[2];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,6 +74,13 @@ void PrintLn(char *str)
   Print("\r\n");
 }
 
+void PrintJoyStickState()
+{
+  char str[100];
+  sprintf(str, "JS: %lu %lu", JoyStickBuffer[0], JoyStickBuffer[1]);
+  PrintLn(str);
+}
+
 // should be called 1000Hz
 void HandleTim3Interrupt() {
   static uint32_t callNum = 0;
@@ -79,7 +90,7 @@ void HandleTim3Interrupt() {
   }
 
   if (callNum % 10 == 0) { // 100Hz
-    PrintLn("100Hz");
+    PrintJoyStickState();
   }
 }
 
@@ -113,10 +124,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_TIM3_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
+  HAL_ADC_Start_DMA(&hadc1, JoyStickBuffer, 2);
 
   /* USER CODE END 2 */
 
@@ -140,6 +154,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -162,6 +177,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
