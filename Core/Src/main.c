@@ -135,6 +135,13 @@ void HandleTim3Interrupt() {
   }
 }
 
+void PrintErrorState()
+{
+  char str[24];
+  sprintf(str, "Error: %d", HAL_ERROR);
+  PrintLn(str);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -246,6 +253,8 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+
+  PrintErrorState();
   while (1)
   {
   }
