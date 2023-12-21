@@ -39,17 +39,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-// Joystick
-#define JS_VAL_REALISTIC_MIN_X 0
-#define JS_VAL_REALISTIC_MAX_X 4020
-#define JS_VAL_REALISTIC_CENTER_X 1944
-#define JS_VAL_DEADZONE_X 5
-
-#define JS_VAL_REALISTIC_MIN_Y 0
-#define JS_VAL_REALISTIC_MAX_Y 4020
-#define JS_VAL_REALISTIC_CENTER_Y 1953
-#define JS_VAL_DEADZONE_Y 5
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,8 +50,7 @@
 
 /* USER CODE BEGIN PV */
 
-uint32_t JoystickBuffer[2];
-int8_t JoystickProcessedValue[2];
+uint32_t AnalogBuffer[1];
 
 /* USER CODE END PV */
 
@@ -107,17 +95,11 @@ int8_t ConvertToProcessedValue(uint32_t rawValue, uint32_t min, uint32_t max, ui
   return 0;
 }
 
-void ProcessJoystickValue()
-{
-  JoystickProcessedValue[0] = ConvertToProcessedValue(JoystickBuffer[0], JS_VAL_REALISTIC_MIN_X, JS_VAL_REALISTIC_MAX_X, JS_VAL_REALISTIC_CENTER_X, JS_VAL_DEADZONE_X);
-  JoystickProcessedValue[1] = ConvertToProcessedValue(JoystickBuffer[1], JS_VAL_REALISTIC_MIN_Y, JS_VAL_REALISTIC_MAX_Y, JS_VAL_REALISTIC_CENTER_Y, JS_VAL_DEADZONE_Y);
-}
-
-void PrintJoystickState()
+void PrintAnalogValue()
 {
   char str[24];
   // print processed values as well as raw
-  sprintf(str, "JS: %4u %4u %4d %4d", JoystickBuffer[0], JoystickBuffer[1], JoystickProcessedValue[0], JoystickProcessedValue[1]);
+  sprintf(str, "An: %4u", AnalogBuffer[0]);
   PrintLn(str);
 }
 
@@ -130,8 +112,7 @@ void HandleTim3Interrupt() {
   }
 
   if (callNum % 10 == 0) { // 100Hz
-    ProcessJoystickValue();
-    PrintJoystickState();
+    PrintAnalogValue();
   }
 }
 
@@ -178,7 +159,7 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
-  HAL_ADC_Start_DMA(&hadc1, JoystickBuffer, 2);
+  HAL_ADC_Start_DMA(&hadc1, AnalogBuffer, 2);
 
   /* USER CODE END 2 */
 
