@@ -28,6 +28,8 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -38,6 +40,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+const uint8_t UPDATE_RATE = 50; // Hz
 
 /* USER CODE END PD */
 
@@ -51,6 +55,14 @@
 /* USER CODE BEGIN PV */
 
 uint32_t AnalogBuffer[1];
+uint8_t bufferTextIn[16];
+char command[16];
+
+uint32_t frequency = 1; // 1Hz
+uint32_t amplitude = 500;
+float currentPhase = 0;
+
+uint8_t sendLight = 1;
 
 /* USER CODE END PV */
 
@@ -103,6 +115,19 @@ void PrintAnalogValue()
   PrintLn(str);
 }
 
+void PrintWaveValue()
+{
+  int32_t waveValue = amplitude * sin(currentPhase);
+  currentPhase += 2 * 3.14159265359 * frequency / UPDATE_RATE;
+  if (currentPhase > 2 * 3.14159265359) {
+    currentPhase -= 2 * 3.14159265359;
+  }
+
+  char str[24];
+  sprintf(str, "An: %d", waveValue);
+  PrintLn(str);
+}
+
 // should be called 1000Hz
 void HandleTim3Interrupt() {
   static uint32_t callNum = 0;
@@ -111,16 +136,57 @@ void HandleTim3Interrupt() {
     callNum = 0;
   }
 
-  if (callNum % 10 == 0) { // 100Hz
-    PrintAnalogValue();
+  if (callNum % (1000 / UPDATE_RATE) == 0) {
+    if (sendLight == 1) {
+      PrintAnalogValue();
+    } else {
+      PrintWaveValue();
+    }
   }
 }
 
 void PrintErrorState()
 {
-  char str[24];
+  char str[64];
   sprintf(str, "Error: %d", HAL_ERROR);
   PrintLn(str);
+}
+
+void ExecCommand(char *command)
+{
+  // if starts with frq: set frequency
+  if (strncmp(command, "frq:", 4) == 0) {
+    frequency = atoi(command + 5);
+  } else if (strncmp(command, "amp:", 4) == 0) {
+    amplitude = atoi(command + 5);
+  } else if (strncmp(command, "light", 5) == 0) {
+    sendLight = 1;
+  } else if (strncmp(command, "sine", 4) == 0) {
+    sendLight = 0;
+  } else
+  {
+    PrintLn("Unknown command");
+  }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart == &huart2) {
+    if (bufferTextIn[0] == '\n' || bufferTextIn[0] == '\r') {
+      ExecCommand(command);
+
+      memset(command, 0, sizeof(command));
+    } else {
+      strncat(command, (char *) bufferTextIn, 1);
+    }
+
+    if (strlen(command) >= sizeof(command) - 1) {
+      PrintLn("Command too long");
+      memset(command, 0, sizeof(command));
+    }
+
+    HAL_UART_Receive_IT(&huart2, bufferTextIn, 1);
+  }
 }
 
 /* USER CODE END 0 */
@@ -160,6 +226,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_ADC_Start_DMA(&hadc1, AnalogBuffer, 2);
+  HAL_UART_Receive_IT(&huart2, bufferTextIn, 1);
 
   /* USER CODE END 2 */
 
